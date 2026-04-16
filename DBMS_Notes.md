@@ -1678,31 +1678,7 @@ FROM Monthly_Sales;
 # Module 5: Database Design Theory & Normalization
 
 ---
-
-## 5.1 Why Normalization?
-
-Consider this badly designed table:
-
-```
-Student_Course (RollNo, StudentName, Dept, DeptHead, CourseID, CourseName, Grade)
-
-| RollNo | StudentName | Dept | DeptHead | CourseID | CourseName  | Grade |
-|--------|-------------|------|----------|----------|-------------|-------|
-| 101    | Aryan       | CS   | Dr. Mehta| C101     | DBMS        | A     |
-| 101    | Aryan       | CS   | Dr. Mehta| C102     | OS          | B     |
-| 102    | Priya       | IT   | Dr. Singh| C101     | DBMS        | A+    |
-```
-
-**Problems (called Anomalies):**
-1. **Insertion Anomaly:** Can't add a new department without a student
-2. **Deletion Anomaly:** Deleting Priya's record loses IT dept info
-3. **Update Anomaly:** If Dr. Mehta changes name, must update ALL CS rows
-
-**Normalization** is the process of organizing tables to **remove redundancy and anomalies**.
-
----
-
-## 5.2 Functional Dependencies (FD)
+## 5.1 Functional Dependencies (FD)
 
 A **functional dependency** X → Y means:  
 "Knowing the value of X, we can determine the value of Y"
@@ -1759,116 +1735,186 @@ Steps to find canonical cover:
 
 ---
 
-## 5.3 Normal Forms
 
-### First Normal Form (1NF)
-A relation is in 1NF if:
-- All attribute values are **atomic (indivisible)**
-- No multivalued attributes or nested tables
-- Each row is unique
+## 5.2 Normalization in DBMS
 
-**Violation Example:**
-```
-Student (RollNo, Name, Courses)
+Normalization in DBMS is the process of organizing data in a relational database to reduce redundancy, eliminate data anomalies (like insertion, update, and deletion problems), and improve data integrity. It follows a series of rules called **Normal Forms (NF)**.
 
-| 101 | Aryan | DBMS, OS, CN |  ← Courses is multivalued → NOT 1NF
-```
-
-**Fix (1NF):**
-```
-Student (RollNo, Name, Course)
-
-| 101 | Aryan | DBMS |
-| 101 | Aryan | OS   |
-| 101 | Aryan | CN   |
-```
+We usually start with an unnormalized table (or 0NF) and progressively apply the rules to reach higher normal forms. The most commonly used ones in practice are **1NF, 2NF, and 3NF**.
 
 ---
 
-### Second Normal Form (2NF)
-A relation is in 2NF if:
-- It is in **1NF**, AND
-- Every non-prime attribute is **fully functionally dependent** on the **entire primary key** (no partial dependency)
+## Running Example (Unnormalized Table)
 
-> Partial dependency = a non-key attribute depends on only PART of a composite primary key
+Imagine a university database table that stores student enrollments:
 
-**Example of 2NF violation:**
-```
-Enrollment (RollNo, CourseID, StudentName, CourseName, Grade)
-PK = (RollNo, CourseID)
+| StudentID | StudentName | CourseID | CourseName        | InstructorName | InstructorOffice |
+|-----------|-------------|----------|-------------------|----------------|------------------|
+| 101       | John        | C1       | Database          | Dr. Smith      | Room A-101       |
+| 101       | John        | C2       | Operating Systems | Dr. Brown      | Room B-202       |
+| 102       | Alice       | C1       | Database          | Dr. Smith      | Room A-101       |
+| 103       | Bob         | C3       | Computer Networks | Dr. Lee        | Room C-303       |
 
-FDs:
-(RollNo, CourseID) → Grade  ✓ full dependency
-RollNo → StudentName        ✗ partial (StudentName depends only on RollNo)
-CourseID → CourseName       ✗ partial (CourseName depends only on CourseID)
-```
+### Problems here:
 
-**Fix (decompose):**
-```
-Student    (RollNo PK, StudentName)
-Course     (CourseID PK, CourseName)
-Enrollment (RollNo FK, CourseID FK, Grade)
-           PK = (RollNo, CourseID)
-```
+- **Redundant data** (e.g., "Dr. Smith" and "Room A-101" repeat for every student taking Database).
+- **Insertion anomaly:** Can't add a new instructor without assigning a student/course.
+- **Deletion anomaly:** If we delete the only student in a course, we lose instructor info.
+- **Update anomaly:** If Dr. Smith moves to a new room, we have to update multiple rows.
 
----
+### Functional Dependencies:
 
-### Third Normal Form (3NF)
-A relation is in 3NF if:
-- It is in **2NF**, AND
-- There are **no transitive dependencies** of non-prime attributes on the primary key
+- `StudentID → StudentName`
+- `CourseID → CourseName, InstructorName`
+- `InstructorName → InstructorOffice`
 
-> Transitive dependency: X → Y → Z, where X is PK, Y is non-prime, Z is non-prime
-
-**Example of 3NF violation:**
-```
-Student (RollNo, Name, Dept, DeptHead)
-
-FDs: RollNo → Dept, Dept → DeptHead
-Transitive: RollNo → Dept → DeptHead  ← violation!
-DeptHead depends on Dept, not directly on RollNo
-```
-
-**Fix:**
-```
-Student    (RollNo PK, Name, DeptID FK)
-Department (DeptID PK, DeptName, DeptHead)
-```
-
-**3NF Formal Definition:**  
-For every FD X → Y in a relation R, at least one of the following must hold:
-1. X → Y is trivial (Y ⊆ X)
-2. X is a superkey
-3. Y is a prime attribute (part of some candidate key)
+> **Primary key (candidate key) = (StudentID + CourseID)** — a composite key.
 
 ---
 
-### Boyce-Codd Normal Form (BCNF)
-BCNF is **stricter than 3NF**. It is in BCNF if:
-- For every FD X → Y: **X must be a superkey**
+## 1. First Normal Form (1NF)
 
-(removes the 3rd condition of 3NF — Y can no longer be a prime attribute)
+### Rule:
+- Every attribute must have **atomic** (single, indivisible) values.
+- No repeating groups or multi-valued attributes.
+- Each row must be unique.
 
-**Example where 3NF holds but BCNF doesn't:**
-```
-Course_Teacher (Student, Course, Teacher)
-PK = (Student, Course) — or — (Student, Teacher)
+Our example table is already in 1NF because all values are atomic (no comma-separated lists like "C1,C2" in one cell).
 
-FDs:
-(Student, Course) → Teacher
-Teacher → Course   ← Teacher is NOT a superkey! BCNF violation
-```
+**If it wasn't in 1NF (hypothetical bad version):**
 
-**Fix:**
-```
-Teacher_Course (Teacher PK, Course)
-Student_Teacher (Student FK, Teacher FK)
-```
+| StudentID | StudentName | Courses |
+|-----------|-------------|---------|
+| 101       | John        | C1, C2  |
+
+**How to fix to 1NF:** Split into separate rows (as we already have in the example).
+
+✅ **Our table is now in 1NF.**
+
+---
+
+## 2. Second Normal Form (2NF)
+
+### Rule:
+- Must be in 1NF.
+- **No partial dependency:** Every non-prime attribute must be fully functionally dependent on the **entire** primary key (not just part of it).
+
+In our table:
+- Primary key = `(StudentID, CourseID)`
+- Partial dependencies exist:
+  - `StudentName` depends only on `StudentID` (not on `CourseID`).
+  - `CourseName` and `InstructorName` depend only on `CourseID` (not on `StudentID`).
+  - `InstructorOffice` depends on `InstructorName` (which itself depends on `CourseID`).
+
+### How to convert to 2NF:
+
+We split the table into smaller tables so that every non-prime attribute depends on the **whole key**.
+
+**Students** *(StudentID is primary key)*
+
+| StudentID | StudentName |
+|-----------|-------------|
+| 101       | John        |
+| 102       | Alice       |
+| 103       | Bob         |
+
+**Courses** *(CourseID is primary key)*
+
+| CourseID | CourseName        | InstructorName |
+|----------|-------------------|----------------|
+| C1       | Database          | Dr. Smith      |
+| C2       | Operating Systems | Dr. Brown      |
+| C3       | Computer Networks | Dr. Lee        |
+
+**Enrollments** *(StudentID + CourseID is composite primary key)*
+
+| StudentID | CourseID |
+|-----------|----------|
+| 101       | C1       |
+| 101       | C2       |
+| 102       | C1       |
+| 103       | C3       |
+
+Now there are no partial dependencies — everything depends on the full primary key of its table.
+
+✅ **Our database is now in 2NF.** Redundancy is reduced, but we still have one issue left…
+
+---
+
+## 3. Third Normal Form (3NF)
+
+### Rule:
+- Must be in 2NF.
+- **No transitive dependency:** Non-prime attributes must depend **only on the primary key** (not on other non-prime attributes).
+
+In the Courses table above:
+- `CourseID → CourseName, InstructorName`
+- But `InstructorName → InstructorOffice` *(InstructorOffice depends on InstructorName, which is a non-prime attribute)*
+
+This is a **transitive dependency:** `CourseID → InstructorName → InstructorOffice`.
+
+### How to convert to 3NF:
+
+Split the transitive dependency into its own table.
+
+**Students** *(same as before)*
+
+| StudentID | StudentName |
+|-----------|-------------|
+| 101       | John        |
+| 102       | Alice       |
+| 103       | Bob         |
+
+**Instructors** *(InstructorName is primary key)*
+
+| InstructorName | InstructorOffice |
+|----------------|------------------|
+| Dr. Smith      | Room A-101       |
+| Dr. Brown      | Room B-202       |
+| Dr. Lee        | Room C-303       |
+
+**Courses** *(now clean)*
+
+| CourseID | CourseName        | InstructorName |
+|----------|-------------------|----------------|
+| C1       | Database          | Dr. Smith      |
+| C2       | Operating Systems | Dr. Brown      |
+| C3       | Computer Networks | Dr. Lee        |
+
+**Enrollments** *(same as before)*
+
+Now every non-prime attribute depends directly on the primary key only. No transitive dependencies.
+
+✅ **Our database is now in 3NF.** This is the most common level used in real-world applications.
+
+---
+
+## Boyce-Codd Normal Form (BCNF) — A Stronger Version of 3NF
+
+### Rule:
+- Must be in 3NF.
+- For every functional dependency `X → Y`, **X must be a super key** (candidate key).
+
+In most cases, 3NF and BCNF are the same. But if there are multiple overlapping candidate keys, BCNF is stricter.
+
+In our example, the tables are already in BCNF because all determinants (left side of `→`) are candidate keys.
+
+> **When BCNF differs:** Suppose a table has two candidate keys and a dependency where one non-key determines part of another key — then we decompose further.
+
+---
+---
 
 > ⚠️ **Important:** BCNF decomposition may **not preserve all FDs** (but is lossless-join). 3NF always preserves FDs.
 
 ---
+## Higher Normal Forms (Quick Overview)
 
+- **4NF:** Eliminates multi-valued dependencies (e.g., one employee has multiple skills and multiple phone numbers independently).
+- **5NF (Project-Join Normal Form):** Eliminates join dependencies (very rare in practice).
+
+> You almost never need 4NF or 5NF unless your database has very complex relationships.
+
+---
 ### Fourth Normal Form (4NF)
 A relation is in 4NF if:
 - It is in **BCNF**, AND
@@ -1899,8 +1945,28 @@ A relation is in 5NF if every **join dependency** is implied by the candidate ke
 Used for rare complex scenarios. Usually not needed in practice.
 
 ---
+## Summary Table
 
-## 5.4 Decomposition Properties
+| Normal Form | Requirement                          | Problem it Solves          | Our Example Status   |
+|-------------|--------------------------------------|----------------------------|----------------------|
+| 1NF         | Atomic values, no repeating groups   | Multi-valued attributes    | Already satisfied    |
+| 2NF         | 1NF + no partial dependency          | Partial key dependency     | After decomposition  |
+| 3NF         | 2NF + no transitive dependency       | Transitive dependency      | Final form           |
+| BCNF        | 3NF + every determinant is a key     | More complex dependencies  | Also satisfied       |
+
+---
+
+## Benefits of Normalization
+
+- **Less storage** — no duplicate data.
+- **Fewer anomalies** — insert/update/delete safely.
+- **Easier maintenance.**
+
+> **Trade-off:** Sometimes we *denormalize* (intentionally go back to lower NF) for performance in read-heavy applications (like data warehouses).
+
+
+
+## 5.3 Decomposition Properties
 
 When decomposing a relation into smaller ones, two properties must hold:
 
@@ -1923,7 +1989,7 @@ All functional dependencies of the original relation can be **checked within ind
 
 ---
 
-## 5.5 Step-by-Step Normalization Example
+## 5.4 Step-by-Step Normalization Example
 
 **Given relation:**
 ```
@@ -1974,7 +2040,7 @@ Enrollment (StudentID FK, CourseID FK, InstructorID FK, Grade)
 
 ---
 
-## 5.6 Denormalization
+## 5.5 Denormalization
 
 **Denormalization** is the process of intentionally adding redundancy back to a database to **improve read performance**.
 
