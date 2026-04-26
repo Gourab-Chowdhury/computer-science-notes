@@ -1902,7 +1902,6 @@ In our example, the tables are already in BCNF because all determinants (left si
 > **When BCNF differs:** Suppose a table has two candidate keys and a dependency where one non-key determines part of another key — then we decompose further.
 
 ---
----
 
 > ⚠️ **Important:** BCNF decomposition may **not preserve all FDs** (but is lossless-join). 3NF always preserves FDs.
 
