@@ -193,7 +193,7 @@ Data doesn't follow a strict schema. Uses formats like **JSON and XML**.
 
 | Language | Full Form | Purpose | Examples |
 |---|---|---|---|
-| **DDL** | Data Definition Language | Define/modify structure | CREATE, ALTER, DROP, TRUNCATE |
+| **DDL** | Data Definition Language | Define/modify structure | CREATE, ALTER, DROP, TRUNCATE, RENAME, COMMENT |
 | **DML** | Data Manipulation Language | Insert/update/delete/retrieve data | INSERT, UPDATE, DELETE, SELECT |
 | **DCL** | Data Control Language | Control access/permissions | GRANT, REVOKE |
 | **TCL** | Transaction Control Language | Manage transactions | COMMIT, ROLLBACK, SAVEPOINT |
