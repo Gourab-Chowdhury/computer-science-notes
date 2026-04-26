@@ -2126,9 +2126,9 @@ After transfer:  A=4000, B=4000  → Total = 8000 ✓
 All integrity constraints must hold after the transaction.
 
 ### I — Isolation
-**Transactions execute as if they are the only ones running.**
+**Concurrent transactions should not interfere with each other.**
+Transactions execute as if they are the only ones running, it means that even though hundreds or thousands of transactions might be running simultaneously on a database, each transaction acts independently and is unaffected by the operations of others.
 
-Concurrent transactions should not interfere with each other.
 
 ```
 T1 is transferring money from A to B.
